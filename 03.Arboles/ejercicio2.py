@@ -1,5 +1,12 @@
 """
 Ejercicio 2: Creación de un Árbol AVL a partir de un archivo de datos.
+
+Implementa inserción balanceada según la teoría de la cátedra (Knuth / Adelson-Velsky y Landis):
+- Factor de balanceo: fb(p) = h(SAD) - h(SAI) en {-2, -1, 0, 1, 2}.
+- Caso 1: Rotación simple a izquierda (fb == 2, fb(der) >= 0).
+- Caso 1 espejo: Rotación simple a derecha (fb == -2, fb(izq) <= 0).
+- Caso 2: Rotación doble derecha-izquierda (fb == 2, fb(der) < 0).
+- Caso 2 espejo: Rotación doble izquierda-derecha (fb == -2, fb(izq) > 0).
 """
 
 import argparse
@@ -49,6 +56,7 @@ def rotar_derecha(a: Nodo) -> Nodo:
 def balancear(a: Nodo, log: list) -> Nodo:
     actualizar_altura(a)
 
+    # Desbalance hacia la derecha
     if fb(a) == 2:
         if fb(a.der) >= 0:
             log.append(f"  caso 1 (rotación simple a izquierda) en {a.clave}")
@@ -87,6 +95,7 @@ def insertar(p: Nodo, clave, log: list) -> Nodo:
 
 
 def dibujar(p: Nodo, prefijo: str = "", renglones: list = None) -> list:
+    """Dibuja el árbol acostado: SAD arriba, SAI abajo; muestra FB entre paréntesis."""
     if renglones is None:
         renglones = []
     if p is not None:
@@ -111,13 +120,25 @@ def simetrico(p: Nodo, resultado: list):
 
 
 def leer_datos(ruta_archivo: str) -> list:
+    # Si la ruta no existe directa, busca relativa al directorio del script
     if not os.path.isabs(ruta_archivo) and not os.path.exists(ruta_archivo):
         posible = os.path.join(os.path.dirname(os.path.abspath(__file__)), ruta_archivo)
         if os.path.exists(posible):
             ruta_archivo = posible
 
-    with open(ruta_archivo, "r", encoding="utf-8") as f:
-        claves = f.read().replace(",", " ").split()
+    contenido = ""
+    for enc in ("utf-8", "utf-16", "latin-1"):
+        try:
+            with open(ruta_archivo, "r", encoding=enc) as f:
+                contenido = f.read()
+                break
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+    if not contenido:
+        with open(ruta_archivo, "r") as f:
+            contenido = f.read()
+
+    claves = contenido.replace(",", " ").split()
     try:
         return [int(c) for c in claves]
     except ValueError:
@@ -125,6 +146,7 @@ def leer_datos(ruta_archivo: str) -> list:
 
 
 def autotest():
+    """Autochequeo con asserts de los 4 casos de rotación e invariantes AVL."""
     pruebas = [
         ([10, 20, 30], "caso 1"),
         ([30, 20, 10], "caso 1 espejo"),
